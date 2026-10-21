@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gdrive-dl-gui"
-version = "1.0.0"
+version = "1.0.1"
 description = "Native Qt desktop interface for gdrive-dl."
 readme = "README.md"
 requires-python = ">=3.11"

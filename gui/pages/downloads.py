@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..models import DownloadQueueModel, QueueStats, StatusDelegate
-from ..widgets import EmptyState
+from ..widgets import Card, EmptyState
 
 
 class DownloadsPage(QWidget):
@@ -82,11 +82,13 @@ class DownloadsPage(QWidget):
         self.stack.addWidget(self.table)
         self.empty = EmptyState(
             "La cola está vacía",
-            "Arrastra un enlace o usa el panel principal para descargar.",
+            "Arrastra un enlace o usa el buscador principal para descargar.",
         )
         self.stack.addWidget(self.empty)
         self.stack.setCurrentWidget(self.empty)
-        layout.addWidget(self.stack, 1)
+        table_card = Card()
+        table_card.content.addWidget(self.stack, 1)
+        layout.addWidget(table_card, 1)
 
         model.rowsInserted.connect(self._sync_empty)
         model.rowsRemoved.connect(self._sync_empty)

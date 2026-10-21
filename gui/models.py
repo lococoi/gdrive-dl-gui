@@ -34,11 +34,11 @@ STATUS_LABELS = {
 }
 
 STATUS_COLORS = {
-    DownloadStatus.QUEUED: "#8ba0bd",
-    DownloadStatus.RUNNING: "#67e8f9",
-    DownloadStatus.COMPLETED: "#6ee7b7",
-    DownloadStatus.SKIPPED: "#fcd34d",
-    DownloadStatus.FAILED: "#fda4af",
+    DownloadStatus.QUEUED: "#6b7280",
+    DownloadStatus.RUNNING: "#2563eb",
+    DownloadStatus.COMPLETED: "#059669",
+    DownloadStatus.SKIPPED: "#b45309",
+    DownloadStatus.FAILED: "#dc2626",
 }
 
 

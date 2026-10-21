@@ -6,7 +6,7 @@
 
 **A native Qt control center for gdrive-dl. No HTML, no web view, no browser runtime.**
 
-`gdrive-dl-gui` is a desktop interface for downloading private Google Drive files with the same isolated Chrome session used by `gdrive-dl`. The UI is built entirely with PySide6 widgets and custom painting. It uses a dark, Astro-inspired visual language: deep backgrounds, subtle grid lines, gradient glows, rounded cards, animated status pills, and a live activity console.
+`gdrive-dl-gui` is a desktop interface for downloading private Google Drive files with the same isolated Chrome session used by `gdrive-dl`. The UI is built entirely with PySide6 widgets and custom painting. It uses a light, editorial, Astro-inspired visual language: warm paper backgrounds, soft gradient glows, large typography, rounded surfaces, animated status pills, and a live activity console. There are no colored borders.
 
 [![CI](https://github.com/lococoi/gdrive-dl-gui/actions/workflows/ci.yml/badge.svg)](https://github.com/lococoi/gdrive-dl-gui/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/lococoi/gdrive-dl-gui)](https://github.com/lococoi/gdrive-dl-gui/releases)
@@ -225,7 +225,7 @@ Apache License 2.0. See [LICENSE](LICENSE).
 
 `gdrive-dl-gui` es un centro de control de escritorio para descargar archivos privados de Google Drive usando la misma sesión aislada de Chrome que `gdrive-dl`. Toda la interfaz está construida con widgets de PySide6 y pintado personalizado. No usa HTML, CSS, JavaScript, Electron, Tauri ni un navegador embebido.
 
-El tema visual está inspirado en una página moderna de Astro: fondo profundo, cuadrícula sutil, resplandores degradados, tarjetas redondeadas, píldoras de estado animadas y una consola de actividad en vivo.
+El tema visual está inspirado en una página moderna de Astro: fondo cálido tipo papel, resplandores degradados, tipografía grande, superficies redondeadas, píldoras de estado animadas y una consola de actividad en vivo. Sin bordes de color.
 
 ### Funciones
 

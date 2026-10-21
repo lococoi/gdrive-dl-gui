@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-import math
 from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import (
     QEasingCurve,
     QPropertyAnimation,
-    QRectF,
     Qt,
     QTimer,
     Signal,
 )
 from PySide6.QtGui import (
+    QBrush,
     QColor,
     QLinearGradient,
     QPainter,
-    QPainterPath,
+    QPen,
     QPixmap,
     QRadialGradient,
     QTextCharFormat,
@@ -24,6 +23,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsDropShadowEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
@@ -43,17 +43,54 @@ def asset_path(name: str) -> Path:
     return ASSETS / name
 
 
+def add_shadow(widget: QWidget, *, blur: int = 40, y: int = 18) -> None:
+    shadow = QGraphicsDropShadowEffect(widget)
+    shadow.setBlurRadius(blur)
+    shadow.setOffset(0, y)
+    shadow.setColor(QColor(17, 17, 22, 22))
+    widget.setGraphicsEffect(shadow)
+
+
 class Card(QFrame):
     def __init__(self, parent: QWidget | None = None, *, subtle: bool = False) -> None:
         super().__init__(parent)
         self.setObjectName("SubtleCard" if subtle else "Card")
         self._content = QVBoxLayout(self)
-        self._content.setContentsMargins(20, 20, 20, 20)
-        self._content.setSpacing(12)
+        self._content.setContentsMargins(24, 24, 24, 24)
+        self._content.setSpacing(14)
+        if not subtle:
+            add_shadow(self)
 
     @property
     def content(self) -> QVBoxLayout:
         return self._content
+
+
+class FeatureCard(Card):
+    def __init__(
+        self,
+        number: str,
+        title: str,
+        body: str,
+        accent: str,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setMinimumHeight(174)
+        badge = QLabel(number)
+        badge.setStyleSheet(
+            f"color: {accent}; font-size: 12px; font-weight: 800; "
+            f"letter-spacing: 1px;"
+        )
+        self.content.addWidget(badge)
+        title_label = QLabel(title)
+        title_label.setObjectName("SectionTitle")
+        self.content.addWidget(title_label)
+        body_label = QLabel(body)
+        body_label.setObjectName("Muted")
+        body_label.setWordWrap(True)
+        self.content.addWidget(body_label)
+        self.content.addStretch(1)
 
 
 class StatCard(Card):
@@ -61,19 +98,20 @@ class StatCard(Card):
         self,
         caption: str,
         value: str = "—",
-        accent: str = "#8b5cf6",
+        accent: str = "#6d5ef7",
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setMinimumHeight(96)
-        self._accent = accent
+        self.setMinimumHeight(122)
         top = QHBoxLayout()
         top.setSpacing(8)
         dot = QLabel()
         dot.setFixedSize(8, 8)
         dot.setStyleSheet(f"background: {accent}; border-radius: 4px;")
         top.addWidget(dot)
-        top.addWidget(self._caption_label(caption))
+        caption_label = QLabel(caption.upper())
+        caption_label.setObjectName("StatCaption")
+        top.addWidget(caption_label)
         top.addStretch(1)
         self.content.addLayout(top)
         self._value = QLabel(value)
@@ -82,12 +120,6 @@ class StatCard(Card):
         self._detail = QLabel("")
         self._detail.setObjectName("Muted")
         self.content.addWidget(self._detail)
-
-    @staticmethod
-    def _caption_label(text: str) -> QLabel:
-        label = QLabel(text.upper())
-        label.setObjectName("StatCaption")
-        return label
 
     def set_value(self, value: str, detail: str = "") -> None:
         self._value.setText(value)
@@ -109,86 +141,140 @@ class StatusPill(QLabel):
         self.style().polish(self)
 
 
-class SidebarButton(QPushButton):
+class NavButton(QPushButton):
     def __init__(self, text: str) -> None:
         super().__init__(text)
         self.setObjectName("NavButton")
         self.setCheckable(True)
         self.setCursor(Qt.PointingHandCursor)
-        self.setMinimumHeight(42)
+        self.setMinimumHeight(36)
 
 
-class HeroCard(QFrame):
+class GradientLabel(QLabel):
+    def __init__(
+        self,
+        text: str,
+        colors: tuple[str, str] = ("#6d5ef7", "#ff7a59"),
+    ) -> None:
+        super().__init__(text)
+        self._colors = colors
+        self.setAlignment(Qt.AlignCenter)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setStyleSheet(
+            "font-size: 52px; font-weight: 800; letter-spacing: -2px;"
+        )
+
+    def set_colors(self, colors: tuple[str, str]) -> None:
+        self._colors = colors
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setFont(self.font())
+        gradient = QLinearGradient(0, 0, self.width(), self.height())
+        gradient.setColorAt(0.0, QColor(self._colors[0]))
+        gradient.setColorAt(1.0, QColor(self._colors[1]))
+        painter.setPen(QPen(QBrush(gradient), 1))
+        painter.drawText(
+            self.contentsRect(),
+            int(self.alignment()),
+            self.text(),
+        )
+
+
+class HeroCard(QWidget):
     download_requested = Signal(str)
 
     def __init__(self, accent: QColor, accent_secondary: QColor) -> None:
         super().__init__()
-        self.setObjectName("HeroCard")
-        self.setMinimumHeight(262)
+        self.setObjectName("Hero")
+        self.setMinimumHeight(420)
         self._accent = accent
         self._accent_secondary = accent_secondary
-        self._phase = 0.0
         self._logo = QPixmap(str(asset_path("logo.png")))
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(30, 28, 30, 28)
+        layout.setContentsMargins(28, 44, 28, 34)
         layout.setSpacing(10)
 
         kicker = QLabel("GOOGLE DRIVE · SESIÓN AISLADA")
         kicker.setObjectName("HeroKicker")
+        kicker.setAlignment(Qt.AlignCenter)
         layout.addWidget(kicker)
 
-        title = QLabel("Descarga sin fricción.")
-        title.setObjectName("HeroTitle")
-        layout.addWidget(title)
+        first_line = QLabel("Tus archivos de Drive,")
+        first_line.setObjectName("HeroTitle")
+        first_line.setAlignment(Qt.AlignCenter)
+        layout.addWidget(first_line)
 
-        text = QLabel(
-            "Pega un enlace de Google Drive. La sesión vive en un perfil de "
-            "Chrome separado y las descargas se ejecutan con timeouts y reintentos."
+        self.gradient = GradientLabel(
+            "sin fricción.",
+            (accent.name(), accent_secondary.name()),
         )
-        text.setObjectName("HeroText")
-        text.setWordWrap(True)
-        layout.addWidget(text)
-        layout.addSpacing(8)
+        layout.addWidget(self.gradient)
 
-        row = QHBoxLayout()
-        row.setSpacing(10)
+        subtitle = QLabel(
+            "Una sesión aislada de Chrome, descargas resilientes y una interfaz "
+            "que nunca se queda esperando."
+        )
+        subtitle.setObjectName("HeroText")
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setWordWrap(True)
+        subtitle.setMaximumWidth(620)
+        subtitle.setMinimumHeight(78)
+        subtitle.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        layout.addWidget(subtitle, 0, Qt.AlignHCenter)
+        layout.addSpacing(14)
+
+        search = QFrame()
+        search.setObjectName("SearchCard")
+        search.setMaximumWidth(760)
+        search_layout = QHBoxLayout(search)
+        search_layout.setContentsMargins(8, 8, 8, 8)
+        search_layout.setSpacing(8)
         self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText("https://drive.google.com/file/d/…/view")
-        self.url_input.setMinimumHeight(44)
+        self.url_input.setPlaceholderText(
+            "Pega un enlace de Google Drive para comenzar"
+        )
+        self.url_input.setMinimumHeight(46)
         self.url_input.returnPressed.connect(self._emit_download)
-        row.addWidget(self.url_input, 1)
+        search_layout.addWidget(self.url_input, 1)
 
         self.paste_button = QPushButton("Pegar")
         self.paste_button.setObjectName("Ghost")
-        self.paste_button.setMinimumHeight(44)
+        self.paste_button.setMinimumHeight(46)
         self.paste_button.clicked.connect(self._paste)
-        row.addWidget(self.paste_button)
+        search_layout.addWidget(self.paste_button)
 
         self.download_button = QPushButton("Descargar")
         self.download_button.setObjectName("Primary")
-        self.download_button.setMinimumHeight(44)
+        self.download_button.setMinimumHeight(46)
         self.download_button.clicked.connect(self._emit_download)
-        row.addWidget(self.download_button)
-        layout.addLayout(row)
-        layout.addStretch(1)
+        search_layout.addWidget(self.download_button)
+        add_shadow(search, blur=28, y=12)
+        layout.addWidget(search, 0, Qt.AlignHCenter)
 
-        self._timer = QTimer(self)
-        self._timer.setInterval(60)
-        self._timer.timeout.connect(self._tick)
+        trust = QHBoxLayout()
+        trust.setSpacing(18)
+        trust.addStretch(1)
+        for text in (
+            "Perfil de Chrome aislado",
+            "Reintentos automáticos",
+            "Todo se queda en local",
+        ):
+            label = QLabel(text)
+            label.setObjectName("Tiny")
+            trust.addWidget(label)
+        trust.addStretch(1)
+        layout.addLayout(trust)
+        layout.addStretch(1)
 
     def set_accent(self, primary: QColor, secondary: QColor) -> None:
         self._accent = primary
         self._accent_secondary = secondary
+        self.gradient.set_colors((primary.name(), secondary.name()))
         self.update()
-
-    def showEvent(self, event) -> None:
-        self._timer.start()
-        super().showEvent(event)
-
-    def hideEvent(self, event) -> None:
-        self._timer.stop()
-        super().hideEvent(event)
 
     def set_busy(self, busy: bool) -> None:
         self.download_button.setDisabled(busy)
@@ -196,10 +282,6 @@ class HeroCard(QFrame):
 
     def clear_url(self) -> None:
         self.url_input.clear()
-
-    def _tick(self) -> None:
-        self._phase = (self._phase + 0.025) % (math.pi * 2)
-        self.update()
 
     def _emit_download(self) -> None:
         url = self.url_input.text().strip()
@@ -217,76 +299,41 @@ class HeroCard(QFrame):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
-        path = QPainterPath()
-        path.addRoundedRect(rect, 26, 26)
+        painter.fillRect(self.rect(), Qt.transparent)
 
-        gradient = QLinearGradient(rect.topLeft(), rect.bottomRight())
-        gradient.setColorAt(0.0, QColor("#14213a"))
-        gradient.setColorAt(0.55, QColor("#0d1728"))
-        gradient.setColorAt(1.0, QColor("#0a111d"))
-        painter.fillPath(path, gradient)
+        painter.setPen(QColor(17, 17, 22, 12))
+        spacing = 28
+        for x in range(0, self.width(), spacing):
+            for y in range(0, self.height(), spacing):
+                painter.drawPoint(x, y)
 
-        painter.save()
-        painter.setClipPath(path)
-        grid_pen = QColor(255, 255, 255, 7)
-        painter.setPen(grid_pen)
-        spacing = 42
-        x = rect.left()
-        while x < rect.right():
-            painter.drawLine(int(x), int(rect.top()), int(x), int(rect.bottom()))
-            x += spacing
-        y = rect.top()
-        while y < rect.bottom():
-            painter.drawLine(int(rect.left()), int(y), int(rect.right()), int(y))
-            y += spacing
-
-        glow = QRadialGradient(
-            rect.right() - 100,
-            rect.top() + 30,
-            270,
-        )
-        accent = QColor(self._accent)
-        accent.setAlpha(52)
-        glow.setColorAt(0.0, accent)
+        glow = QRadialGradient(self.width() * 0.16, 40, self.width() * 0.42)
+        primary = QColor(self._accent)
+        primary.setAlpha(42)
+        glow.setColorAt(0.0, primary)
         glow.setColorAt(1.0, QColor(0, 0, 0, 0))
-        painter.fillRect(rect, glow)
+        painter.fillRect(self.rect(), glow)
 
-        glow2 = QRadialGradient(
-            rect.left() + 80,
-            rect.bottom() + 20,
-            240,
-        )
+        glow2 = QRadialGradient(self.width() * 0.86, 20, self.width() * 0.38)
         secondary = QColor(self._accent_secondary)
-        secondary.setAlpha(32)
+        secondary.setAlpha(36)
         glow2.setColorAt(0.0, secondary)
         glow2.setColorAt(1.0, QColor(0, 0, 0, 0))
-        painter.fillRect(rect, glow2)
+        painter.fillRect(self.rect(), glow2)
 
         if not self._logo.isNull():
-            painter.setOpacity(0.10)
+            painter.setOpacity(0.055)
             logo = self._logo.scaled(
-                220,
-                220,
+                250,
+                250,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation,
             )
             painter.drawPixmap(
-                int(rect.right() - logo.width() - 24),
-                int(rect.bottom() - logo.height() + 40),
+                int(self.width() - logo.width() - 30),
+                int(self.height() - logo.height() + 34),
                 logo,
             )
-        painter.restore()
-
-        painter.setPen(QColor(255, 255, 255, 22))
-        painter.drawPath(path)
-        painter.setPen(QColor(255, 255, 255, 18))
-        painter.drawLine(
-            int(rect.left() + 26),
-            int(rect.top() + 1),
-            int(rect.right() - 26),
-            int(rect.top() + 1),
-        )
 
 
 class LogConsole(QPlainTextEdit):
@@ -295,8 +342,7 @@ class LogConsole(QPlainTextEdit):
         self.setObjectName("Console")
         self.setReadOnly(True)
         self.setMaximumBlockCount(700)
-        self.setMinimumHeight(150)
-        self.setWordWrapMode(self.wordWrapMode())
+        self.setMinimumHeight(180)
 
     def append_line(self, message: str) -> None:
         cleaned = message.replace("\r", "").strip()
@@ -314,7 +360,7 @@ class LogConsole(QPlainTextEdit):
         elif "warn" in lowered or "aviso" in lowered:
             formatter.setForeground(QColor("#fcd34d"))
         else:
-            formatter.setForeground(QColor("#a8c0dd"))
+            formatter.setForeground(QColor("#d8d3c8"))
         cursor.insertText(f"{timestamp}  {cleaned}\n", formatter)
         self.setTextCursor(cursor)
         self.ensureCursorVisible()
@@ -346,15 +392,15 @@ class Toast(QFrame):
         duration: int = 3600,
     ) -> None:
         colors = {
-            "success": ("rgba(52, 211, 153, 0.14)", "#9ff0c8"),
-            "danger": ("rgba(244, 63, 94, 0.14)", "#fda4af"),
-            "warning": ("rgba(251, 191, 36, 0.14)", "#f8d67d"),
-            "info": ("rgba(56, 189, 248, 0.14)", "#9adcf8"),
+            "success": "#6ee7b7",
+            "danger": "#fda4af",
+            "warning": "#fcd34d",
+            "info": "#c7d2fe",
         }
-        background, foreground = colors.get(tone, colors["info"])
+        foreground = colors.get(tone, colors["info"])
         self.setStyleSheet(
-            f"QFrame#Toast {{ background: {background}; border: none; "
-            f"border-radius: 12px; }} "
+            "QFrame#Toast { background: #111114; border: none; "
+            "border-radius: 14px; } "
             f"QLabel {{ color: {foreground}; font-weight: 600; }}"
         )
         self._label.setText(message)

@@ -177,7 +177,7 @@ class SettingsPage(PageScroll):
     def set_status(self, message: str, *, error: bool = False) -> None:
         self.status.setText(message)
         self.status.setStyleSheet(
-            "color: #fda4af;" if error else "color: #7f95b3;"
+            "color: #b91c1c;" if error else "color: #6f6a61;"
         )
 
     def set_settings(self, settings: GuiSettings) -> None:

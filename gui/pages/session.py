@@ -109,7 +109,7 @@ class SessionPage(PageScroll):
             text_column = QVBoxLayout()
             text_column.setSpacing(2)
             step_title = QLabel(title_text)
-            step_title.setStyleSheet("font-weight: 700; color: #e6edf7;")
+            step_title.setStyleSheet("font-weight: 700; color: #111114;")
             step_body = QLabel(body)
             step_body.setWordWrap(True)
             step_body.setObjectName("Muted")

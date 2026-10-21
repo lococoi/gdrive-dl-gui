@@ -80,16 +80,16 @@ class YtDlpLocator(ToolVersionProvider):
             if candidate.is_file():
                 return (str(candidate.resolve()),)
 
-        found = shutil.which("yt-dlp")
-        if found:
-            return (found,)
-
         try:
             module_available = importlib.util.find_spec("yt_dlp") is not None
         except (ImportError, ValueError):
             module_available = False
         if module_available:
             return (sys.executable, "-m", "yt_dlp")
+
+        found = shutil.which("yt-dlp")
+        if found:
+            return (found,)
 
         raise ToolNotFoundError(
             "No se encontró yt-dlp.",

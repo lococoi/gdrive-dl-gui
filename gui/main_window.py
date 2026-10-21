@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThreadPool, QTimer, QUrl
+from PySide6.QtCore import QThreadPool, QTimer, QUrl
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
@@ -39,41 +39,35 @@ from .settings import GuiSettings, SettingsStore
 from .theme import ACCENTS, build_stylesheet
 from .widgets import (
     AnimatedStack,
-    SidebarButton,
+    NavButton,
     StatusPill,
     Toast,
     asset_path,
 )
 from .workers import GuiBackend, ProgressBridge, TaskWorker
 
-PAGE_META = (
-    ("Resumen", "Sesión, actividad y accesos rápidos"),
-    ("Descargas", "Cola dinámica y resultados"),
-    ("Sesión", "Perfil aislado de Chrome"),
-    ("Diagnóstico", "Comprobaciones del entorno"),
-    ("Ajustes", "Rutas, concurrencia y apariencia"),
-)
+PAGE_META = ("Resumen", "Descargas", "Sesión", "Diagnóstico", "Ajustes")
 
 
 class AppShell(QWidget):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.fillRect(self.rect(), QColor("#070b12"))
+        painter.fillRect(self.rect(), QColor("#f4f1ea"))
 
-        painter.setPen(QColor(255, 255, 255, 14))
-        spacing = 30
+        painter.setPen(QColor(17, 17, 22, 12))
+        spacing = 28
         for x in range(0, self.width(), spacing):
             for y in range(0, self.height(), spacing):
                 painter.drawPoint(x, y)
 
-        glow = QRadialGradient(self.width() * 0.8, -40, self.width() * 0.55)
-        glow.setColorAt(0.0, QColor(34, 211, 238, 28))
+        glow = QRadialGradient(self.width() * 0.18, -60, self.width() * 0.5)
+        glow.setColorAt(0.0, QColor(109, 94, 247, 38))
         glow.setColorAt(1.0, QColor(0, 0, 0, 0))
         painter.fillRect(self.rect(), glow)
 
-        glow2 = QRadialGradient(-40, self.height() * 0.25, self.width() * 0.5)
-        glow2.setColorAt(0.0, QColor(139, 92, 246, 24))
+        glow2 = QRadialGradient(self.width() * 0.9, -40, self.width() * 0.48)
+        glow2.setColorAt(0.0, QColor(255, 122, 89, 34))
         glow2.setColorAt(1.0, QColor(0, 0, 0, 0))
         painter.fillRect(self.rect(), glow2)
 
@@ -110,17 +104,15 @@ class MainWindow(QMainWindow):
 
         shell = AppShell()
         self.setCentralWidget(shell)
-        root_layout = QHBoxLayout(shell)
+        root_layout = QVBoxLayout(shell)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
-        root_layout.addWidget(self._build_sidebar())
+        root_layout.addWidget(self._build_topbar())
 
         main_area = QWidget()
         main_layout = QVBoxLayout(main_area)
-        main_layout.setContentsMargins(28, 24, 28, 24)
-        main_layout.setSpacing(18)
-        main_layout.addWidget(self._build_header())
-
+        main_layout.setContentsMargins(48, 8, 48, 28)
+        main_layout.setSpacing(0)
         self._stack = AnimatedStack()
         for page in (
             self._overview,
@@ -151,95 +143,58 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(120, self.refresh_status)
 
-    def _build_sidebar(self) -> QWidget:
-        sidebar = QFrame()
-        sidebar.setObjectName("Sidebar")
-        sidebar.setFixedWidth(250)
-        layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(18, 24, 18, 20)
-        layout.setSpacing(8)
+    def _build_topbar(self) -> QWidget:
+        bar = QFrame()
+        bar.setObjectName("TopBar")
+        layout = QHBoxLayout(bar)
+        layout.setContentsMargins(48, 18, 48, 10)
+        layout.setSpacing(18)
 
         brand = QHBoxLayout()
         brand.setSpacing(10)
         logo = QLabel()
-        logo.setPixmap(
-            QIcon(str(asset_path("logo.ico"))).pixmap(40, 40)
-        )
-        logo.setFixedSize(40, 40)
+        logo.setPixmap(QIcon(str(asset_path("logo.ico"))).pixmap(36, 36))
+        logo.setFixedSize(36, 36)
         brand.addWidget(logo)
         names = QVBoxLayout()
         names.setSpacing(0)
         name = QLabel("gdrive-dl")
         name.setObjectName("AppName")
-        tag = QLabel("CONTROL CENTER")
+        tag = QLabel("GOOGLE DRIVE DOWNLOADER")
         tag.setObjectName("AppTag")
         names.addWidget(name)
         names.addWidget(tag)
         brand.addLayout(names)
         layout.addLayout(brand)
-        layout.addSpacing(18)
 
         self._nav_group = QButtonGroup(self)
         self._nav_group.setExclusive(True)
-        self._nav_buttons: list[SidebarButton] = []
-        for index, (title, _) in enumerate(PAGE_META):
-            button = SidebarButton(title)
+        self._nav_buttons: list[NavButton] = []
+        nav = QHBoxLayout()
+        nav.setSpacing(2)
+        for index, title in enumerate(PAGE_META):
+            button = NavButton(title)
             button.clicked.connect(lambda checked=False, i=index: self._navigate(i))
             self._nav_group.addButton(button, index)
             self._nav_buttons.append(button)
-            layout.addWidget(button)
+            nav.addWidget(button)
+        layout.addSpacing(16)
+        layout.addLayout(nav)
         layout.addStretch(1)
 
-        divider = QFrame()
-        divider.setObjectName("Divider")
-        layout.addWidget(divider)
-        layout.addSpacing(6)
-
-        status_card = QFrame()
-        status_card.setObjectName("SubtleCard")
-        status_layout = QVBoxLayout(status_card)
-        status_layout.setContentsMargins(12, 12, 12, 12)
-        status_layout.setSpacing(7)
-        status_caption = QLabel("ESTADO")
-        status_caption.setObjectName("StatCaption")
-        status_layout.addWidget(status_caption)
-        self._sidebar_pill = StatusPill("Verificando", "muted")
-        status_layout.addWidget(self._sidebar_pill)
-        self._sidebar_detail = QLabel("Comprobando entorno…")
-        self._sidebar_detail.setObjectName("Tiny")
-        self._sidebar_detail.setWordWrap(True)
-        status_layout.addWidget(self._sidebar_detail)
-        layout.addWidget(status_card)
-        layout.addSpacing(8)
-
-        version = QLabel(f"v{self._version()}")
-        version.setObjectName("Tiny")
-        version.setAlignment(Qt.AlignCenter)
-        layout.addWidget(version)
-        return sidebar
-
-    def _build_header(self) -> QWidget:
-        header = QFrame()
-        header.setObjectName("TopBar")
-        layout = QHBoxLayout(header)
-        layout.setContentsMargins(2, 0, 2, 0)
-        layout.setSpacing(14)
-        titles = QVBoxLayout()
-        titles.setSpacing(2)
-        self._title = QLabel(PAGE_META[0][0])
-        self._title.setObjectName("Title")
-        self._subtitle = QLabel(PAGE_META[0][1])
-        self._subtitle.setObjectName("Subtitle")
-        titles.addWidget(self._title)
-        titles.addWidget(self._subtitle)
-        layout.addLayout(titles, 1)
         self._header_pill = StatusPill("Comprobando", "muted")
         layout.addWidget(self._header_pill)
+
         self._refresh_button = QPushButton("Actualizar")
         self._refresh_button.setObjectName("Ghost")
         self._refresh_button.clicked.connect(self.refresh_status)
         layout.addWidget(self._refresh_button)
-        return header
+
+        self._top_login = QPushButton("Iniciar sesión")
+        self._top_login.setObjectName("Primary")
+        self._top_login.clicked.connect(self.run_login)
+        layout.addWidget(self._top_login)
+        return bar
 
     def _wire_events(self) -> None:
         self._overview.download_requested.connect(self.enqueue_download)
@@ -276,11 +231,11 @@ class MainWindow(QMainWindow):
 
     def _navigate(self, index: int) -> None:
         self._stack.set_current(index)
-        title, subtitle = PAGE_META[index]
-        self._title.setText(title)
-        self._subtitle.setText(subtitle)
         if 0 <= index < len(self._nav_buttons):
             self._nav_buttons[index].setChecked(True)
+        page = self._stack.widget(index)
+        if page is not None and hasattr(page, "verticalScrollBar"):
+            page.verticalScrollBar().setValue(0)
         if index == 2:
             self.refresh_status()
 
@@ -351,23 +306,16 @@ class MainWindow(QMainWindow):
         session = result.session
         if session.available:
             self._header_pill.set_state("Sesión activa", "success")
-            self._sidebar_pill.set_state("Operativo", "success")
-            self._sidebar_detail.setText(
-                f"{session.google_auth_cookie_count} cookies · "
-                f"yt-dlp {result.yt_dlp_version or '—'}"
-            )
+            self._top_login.setText("Renovar sesión")
         else:
             self._header_pill.set_state("Sin sesión", "warning")
-            self._sidebar_pill.set_state("Requiere login", "warning")
-            self._sidebar_detail.setText(session.reason or "Ejecuta login.")
+            self._top_login.setText("Iniciar sesión")
         self._refresh_queue_views()
 
     def _on_status_failed(self, exc: object) -> None:
         self._status_busy = False
         self._refresh_button.setDisabled(False)
         self._header_pill.set_state("Error de estado", "danger")
-        self._sidebar_pill.set_state("Error", "danger")
-        self._sidebar_detail.setText(str(exc))
 
     def run_login(self) -> None:
         if self._login_busy:
@@ -375,6 +323,8 @@ class MainWindow(QMainWindow):
         self._login_busy = True
         self._overview.set_login_busy(True)
         self._session.set_busy(True)
+        self._top_login.setDisabled(True)
+        self._top_login.setText("Esperando a Chrome…")
         self._toast.show_message("Abriendo Chrome. Completa el login.", "info", 5000)
         worker = TaskWorker(self._backend.login)
         worker.signals.finished.connect(self._on_login_finished)
@@ -385,6 +335,7 @@ class MainWindow(QMainWindow):
         self._login_busy = False
         self._overview.set_login_busy(False)
         self._session.set_busy(False)
+        self._top_login.setDisabled(False)
         self._toast.show_message("Sesión verificada correctamente.", "success")
         self.refresh_status()
 
@@ -392,6 +343,7 @@ class MainWindow(QMainWindow):
         self._login_busy = False
         self._overview.set_login_busy(False)
         self._session.set_busy(False)
+        self._top_login.setDisabled(False)
         self._toast.show_message(str(exc), "danger", 6000)
         self.refresh_status()
 

@@ -29,7 +29,7 @@ class CheckRow(QFrame):
         text = QVBoxLayout()
         text.setSpacing(2)
         name = QLabel(check.name)
-        name.setStyleSheet("font-weight: 700; color: #e6edf7;")
+        name.setStyleSheet("font-weight: 700; color: #111114;")
         detail = QLabel(check.detail)
         detail.setObjectName("Muted")
         detail.setWordWrap(True)
