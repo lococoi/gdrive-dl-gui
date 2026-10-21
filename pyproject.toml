@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gdrive-dl-gui"
+version = "1.0.0"
+description = "Native Qt desktop interface for gdrive-dl."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "lococoi" },
+]
+dependencies = [
+    "PySide6>=6.7",
+    "yt-dlp>=2025.1.1",
+]
+
+[project.scripts]
+gdrive-dl-gui = "gui.app:main"
+
+[project.urls]
+Homepage = "https://github.com/lococoi/gdrive-dl-gui"
+Repository = "https://github.com/lococoi/gdrive-dl-gui"
+Issues = "https://github.com/lococoi/gdrive-dl-gui/issues"
+
+[tool.setuptools.packages.find]
+include = ["gdrive_dl*", "gui*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint.per-file-ignores]
+"gui/app.py" = ["BLE001"]
+"gui/workers.py" = ["BLE001"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
