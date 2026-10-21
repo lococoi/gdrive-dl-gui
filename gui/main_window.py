@@ -61,21 +61,19 @@ class AppShell(QWidget):
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.fillRect(self.rect(), QColor("#070b12"))
 
-        grid = QColor(255, 255, 255, 6)
-        painter.setPen(grid)
-        spacing = 48
+        painter.setPen(QColor(255, 255, 255, 14))
+        spacing = 30
         for x in range(0, self.width(), spacing):
-            painter.drawLine(x, 0, x, self.height())
-        for y in range(0, self.height(), spacing):
-            painter.drawLine(0, y, self.width(), y)
+            for y in range(0, self.height(), spacing):
+                painter.drawPoint(x, y)
 
-        glow = QRadialGradient(self.width() * 0.78, 0, self.width() * 0.55)
-        glow.setColorAt(0.0, QColor(34, 211, 238, 22))
+        glow = QRadialGradient(self.width() * 0.8, -40, self.width() * 0.55)
+        glow.setColorAt(0.0, QColor(34, 211, 238, 28))
         glow.setColorAt(1.0, QColor(0, 0, 0, 0))
         painter.fillRect(self.rect(), glow)
 
-        glow2 = QRadialGradient(0, self.height() * 0.25, self.width() * 0.45)
-        glow2.setColorAt(0.0, QColor(139, 92, 246, 18))
+        glow2 = QRadialGradient(-40, self.height() * 0.25, self.width() * 0.5)
+        glow2.setColorAt(0.0, QColor(139, 92, 246, 24))
         glow2.setColorAt(1.0, QColor(0, 0, 0, 0))
         painter.fillRect(self.rect(), glow2)
 

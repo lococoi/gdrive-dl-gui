@@ -256,14 +256,10 @@ class StatusDelegate(QStyledItemDelegate):
         pill_width = min(rect.width(), 118)
         pill = QRectF(rect.x(), rect.y(), pill_width, rect.height())
         background = QColor(color)
-        background.setAlpha(28)
-        border = QColor(color)
-        border.setAlpha(70)
+        background.setAlpha(24)
         path = QPainterPath()
         path.addRoundedRect(pill, 9, 9)
         painter.fillPath(path, background)
-        painter.setPen(border)
-        painter.drawPath(path)
 
         dot_x = pill.x() + 12
         dot_y = pill.center().y()

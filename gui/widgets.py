@@ -278,10 +278,15 @@ class HeroCard(QFrame):
             )
         painter.restore()
 
-        border = QColor(self._accent)
-        border.setAlpha(70)
-        painter.setPen(border)
+        painter.setPen(QColor(255, 255, 255, 22))
         painter.drawPath(path)
+        painter.setPen(QColor(255, 255, 255, 18))
+        painter.drawLine(
+            int(rect.left() + 26),
+            int(rect.top() + 1),
+            int(rect.right() - 26),
+            int(rect.top() + 1),
+        )
 
 
 class LogConsole(QPlainTextEdit):
@@ -341,14 +346,14 @@ class Toast(QFrame):
         duration: int = 3600,
     ) -> None:
         colors = {
-            "success": ("#0d2c24", "#6ee7b7", "#1d5a48"),
-            "danger": ("#2d1218", "#fda4af", "#6b2231"),
-            "warning": ("#2d2410", "#fcd34d", "#6b5217"),
-            "info": ("#10243a", "#7dd3fc", "#1e4f75"),
+            "success": ("rgba(52, 211, 153, 0.14)", "#9ff0c8"),
+            "danger": ("rgba(244, 63, 94, 0.14)", "#fda4af"),
+            "warning": ("rgba(251, 191, 36, 0.14)", "#f8d67d"),
+            "info": ("rgba(56, 189, 248, 0.14)", "#9adcf8"),
         }
-        background, foreground, border = colors.get(tone, colors["info"])
+        background, foreground = colors.get(tone, colors["info"])
         self.setStyleSheet(
-            f"QFrame#Toast {{ background: {background}; border: 1px solid {border}; "
+            f"QFrame#Toast {{ background: {background}; border: none; "
             f"border-radius: 12px; }} "
             f"QLabel {{ color: {foreground}; font-weight: 600; }}"
         )

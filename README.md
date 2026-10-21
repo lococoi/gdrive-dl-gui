@@ -9,6 +9,7 @@
 `gdrive-dl-gui` is a desktop interface for downloading private Google Drive files with the same isolated Chrome session used by `gdrive-dl`. The UI is built entirely with PySide6 widgets and custom painting. It uses a dark, Astro-inspired visual language: deep backgrounds, subtle grid lines, gradient glows, rounded cards, animated status pills, and a live activity console.
 
 [![CI](https://github.com/lococoi/gdrive-dl-gui/actions/workflows/ci.yml/badge.svg)](https://github.com/lococoi/gdrive-dl-gui/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/lococoi/gdrive-dl-gui)](https://github.com/lococoi/gdrive-dl-gui/releases)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB)](https://www.python.org/)
 [![Qt](https://img.shields.io/badge/Qt-PySide6-41CD52)](https://doc.qt.io/qtforpython/)
 [![License](https://img.shields.io/github/license/lococoi/gdrive-dl-gui)](LICENSE)
@@ -161,6 +162,8 @@ gui/
     diagnostics.py  Environment checks
     settings.py     Configuration form
 gdrive_dl/          Core download, session, Chrome and yt-dlp services
+gdrive-dl-gui.spec  One-file windowed PyInstaller specification
+scripts/build_gui_exe.py  Standalone executable build script
 ```
 
 - The UI never calls `subprocess` or reads the cookie database directly.
@@ -170,11 +173,29 @@ gdrive_dl/          Core download, session, Chrome and yt-dlp services
 - The queue is a `QAbstractTableModel`; the status column uses a custom delegate.
 - Accent changes rebuild the application style sheet and the hero gradient without restarting.
 
+## Standalone Windows executable
+
+The CI workflow builds a one-file windowed executable after the test job and uploads it as `gdrive-dl-gui-windows-x64`. Tags matching `v*` publish the executable in a GitHub release.
+
+Download the latest release:
+
+https://github.com/lococoi/gdrive-dl-gui/releases
+
+Build locally:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python scripts/build_gui_exe.py
+.\dist\gdrive-dl-gui.exe
+```
+
+The executable embeds Python, PySide6, the GUI, the core services, and the latest `yt-dlp` package. It still requires Google Chrome for authentication. Profile, downloads, logs, and `settings.json` are created next to the executable unless environment variables point elsewhere.
+
 ## Development
 
 ```powershell
 python -m pip install -r requirements-dev.txt
-ruff check main.py gui tests
+ruff check main.py gui tests scripts
 mypy gdrive_dl --ignore-missing-imports
 python -m unittest discover -s tests -t . -v
 ```
@@ -257,11 +278,29 @@ La GUI es una capa de presentación sobre el paquete `gdrive_dl`:
 - `gui/pages/` contiene cada vista como un widget independiente.
 - `gdrive_dl/` contiene la lógica de sesión, Chrome, `yt-dlp`, reintentos, timeouts y validación.
 
+### Ejecutable Windows autocontenido
+
+El CI compila un ejecutable windowed de un solo archivo después de las pruebas y lo publica como `gdrive-dl-gui-windows-x64`. Los tags `v*` publican el ejecutable en una release de GitHub.
+
+Descarga la última release:
+
+https://github.com/lococoi/gdrive-dl-gui/releases
+
+Build local:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python scripts/build_gui_exe.py
+.\dist\gdrive-dl-gui.exe
+```
+
+El ejecutable incluye Python, PySide6, la GUI, los servicios del core y el paquete `yt-dlp` más reciente. Sigue necesitando Google Chrome para autenticarse. El perfil, las descargas, los logs y `settings.json` se crean junto al ejecutable salvo que las variables de entorno indiquen otra ruta.
+
 ### Desarrollo
 
 ```powershell
 python -m pip install -r requirements-dev.txt
-ruff check main.py gui tests
+ruff check main.py gui tests scripts
 mypy gdrive_dl --ignore-missing-imports
 python -m unittest discover -s tests -t . -v
 ```

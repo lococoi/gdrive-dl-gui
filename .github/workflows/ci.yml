@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
 
 permissions:
@@ -32,7 +34,7 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Lint
-        run: ruff check main.py gui tests
+        run: ruff check main.py gui tests scripts
 
       - name: Type check core
         run: mypy gdrive_dl --ignore-missing-imports
@@ -41,3 +43,65 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python -m unittest discover -s tests -t . -v
+
+  build:
+    name: Build Windows executable
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Build standalone GUI
+        run: python scripts/build_gui_exe.py
+
+      - name: Smoke test GUI
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath ".\dist\gdrive-dl-gui.exe" `
+            -ArgumentList "--smoke-test" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "GUI smoke test failed with exit code $($process.ExitCode)"
+          }
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdrive-dl-gui-windows-x64
+          path: dist/gdrive-dl-gui.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish tagged release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download executable
+        uses: actions/download-artifact@v4
+        with:
+          name: gdrive-dl-gui-windows-x64
+          path: dist
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/gdrive-dl-gui.exe
+          generate_release_notes: true

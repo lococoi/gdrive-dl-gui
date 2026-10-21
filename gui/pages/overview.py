@@ -74,8 +74,7 @@ class RecentRow(QFrame):
         color = STATUS_COLORS[item.status]
         pill = StatusPill(STATUS_LABELS[item.status], self._tone(item.status))
         pill.setStyleSheet(
-            f"QLabel#Pill {{ background: {color}22; color: {color}; "
-            f"border: 1px solid {color}66; }}"
+            f"QLabel#Pill {{ background: {color}22; color: {color}; border: none; }}"
         )
         layout.addWidget(pill)
 
